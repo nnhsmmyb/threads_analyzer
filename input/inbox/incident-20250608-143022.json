@@ -1,0 +1,42 @@
+{
+  "source": {
+    "capturedAt": "2025-06-08T14:30:22Z",
+    "origin": "cloudwatch-alarm",
+    "alarmName": "api-gateway-5xx-rate"
+  },
+  "service": "payment-api",
+  "environment": "production",
+  "events": [
+    {
+      "timestamp": "2025-06-08T14:28:10Z",
+      "level": "ERROR",
+      "message": "Connection timeout to postgres-primary after 30000ms",
+      "host": "api-server-03"
+    },
+    {
+      "timestamp": "2025-06-08T14:28:15Z",
+      "level": "ERROR",
+      "message": "Connection timeout to postgres-primary after 30000ms",
+      "host": "api-server-01"
+    },
+    {
+      "timestamp": "2025-06-08T14:28:22Z",
+      "level": "WARN",
+      "message": "HTTP 503 returned for POST /v1/payments",
+      "host": "api-gateway",
+      "requestCount": 847
+    },
+    {
+      "timestamp": "2025-06-08T14:29:01Z",
+      "level": "ERROR",
+      "message": "Connection timeout to postgres-primary after 30000ms",
+      "host": "api-server-02"
+    },
+    {
+      "timestamp": "2025-06-08T14:30:00Z",
+      "level": "INFO",
+      "message": "CloudWatch alarm api-gateway-5xx-rate triggered: threshold 5% exceeded (current: 12.3%)",
+      "host": "monitoring"
+    }
+  ]
+}
