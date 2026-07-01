@@ -4,9 +4,14 @@ __pycache__/
 
 agent_out/
 agent_out_snapshot/
+input/
+t_data/t_data_*.yaml
+trash/
 logs/
 
 agent_debug/
 
 .env
 .env.*
+!.env.example
+.threads_oauth_state

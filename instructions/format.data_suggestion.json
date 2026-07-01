@@ -1,0 +1,32 @@
+{
+  "description": "fetch 用 JSON。配置先は agent_out/data_suggestion_weekly.json",
+  "weekly_schema": {
+    "tasks": {
+      "type": "array",
+      "min_items": 1,
+      "item_fields": {
+        "priority": "高 | 中 | 低",
+        "purpose": "深堀 / … で始まる観測目的",
+        "instruction": "キーワード1行、または @username / username（profile_posts）"
+      }
+    }
+  },
+  "weekly_example": {
+    "tasks": [
+      {
+        "priority": "高",
+        "purpose": "深堀 / 転職×リモートの話題観測",
+        "instruction": "フルリモート 転職"
+      },
+      {
+        "priority": "中",
+        "purpose": "深堀 / 公式アカウントの投稿型（審査前デモ用）",
+        "instruction": "meta"
+      }
+    ]
+  },
+  "instruction_rules": {
+    "keyword": "スペース区切りの検索語 → keyword_search",
+    "username": "@なしの username 1語のみ → profile_posts"
+  }
+}
