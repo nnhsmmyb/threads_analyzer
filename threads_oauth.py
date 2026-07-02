@@ -18,9 +18,15 @@ DEFAULT_REDIRECT_URI = "https://127.0.0.1:8080/callback"
 DEFAULT_SCOPES = (
     "threads_basic",
     "threads_content_publish",
-    "threads_read_replies",
+    "threads_delete",
+    "threads_keyword_search",
+    "threads_location_tagging",
+    "threads_manage_insights",
+    "threads_manage_mentions",
     "threads_manage_replies",
     "threads_profile_discovery",
+    "threads_read_replies",
+    "threads_share_to_instagram",
 )
 REFRESH_THRESHOLD_DAYS = 7
 MIN_TOKEN_AGE_HOURS = 24

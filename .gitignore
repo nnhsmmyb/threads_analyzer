@@ -9,6 +9,10 @@ t_data/t_data_*.yaml
 trash/
 logs/
 
+# App Review 実行結果（ユーザー名・post ID 等を含む）
+**/review_test_result.json
+**/review_demo_result.json
+
 agent_debug/
 
 .env

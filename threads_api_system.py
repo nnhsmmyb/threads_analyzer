@@ -29,7 +29,13 @@ class FetchTask:
     instruction: str
 
     @property
+    def is_own_profile(self) -> bool:
+        return self.instruction.strip().lstrip("@").lower() == "me"
+
+    @property
     def is_username(self) -> bool:
+        if self.is_own_profile:
+            return False
         text = self.instruction.strip()
         if text.startswith("http"):
             return False
@@ -90,6 +96,149 @@ class ThreadsApiClient:
         )
         data = payload.get("data")
         return data if isinstance(data, list) else []
+
+    def me_threads(self, *, limit: int = SEARCH_MAX_RESULTS) -> list[dict]:
+        capped = max(1, min(limit, 100))
+        fields = "id,text,media_type,permalink,timestamp,username,is_quote_post"
+        payload = self.get_json(
+            "me/threads",
+            {
+                "limit": str(capped),
+                "fields": fields,
+            },
+        )
+        data = payload.get("data")
+        return data if isinstance(data, list) else []
+
+    def delete_json(self, endpoint: str) -> dict:
+        query = urllib.parse.urlencode({"access_token": self._token})
+        url = f"{self._api_base}/{API_VERSION}/{endpoint}?{query}"
+        request = urllib.request.Request(url, method="DELETE")
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                raw = response.read().decode("utf-8")
+                payload = json.loads(raw) if raw.strip() else {"success": True}
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            raise ThreadsApiError(f"HTTP {exc.code} for DELETE {endpoint}: {body}") from exc
+        except urllib.error.URLError as exc:
+            raise ThreadsApiError(f"request failed for DELETE {endpoint}: {exc}") from exc
+        time.sleep(REQUEST_INTERVAL_SEC)
+        if "error" in payload:
+            raise ThreadsApiError(f"API error for DELETE {endpoint}: {payload['error']}")
+        return payload
+
+    def post_form(self, endpoint: str, data: dict[str, str]) -> dict:
+        merged = dict(data)
+        merged.setdefault("access_token", self._token)
+        body = urllib.parse.urlencode(merged).encode("utf-8")
+        url = f"{self._api_base}/{API_VERSION}/{endpoint}"
+        request = urllib.request.Request(
+            url,
+            data=body,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            raise ThreadsApiError(f"HTTP {exc.code} for POST {endpoint}: {detail}") from exc
+        except urllib.error.URLError as exc:
+            raise ThreadsApiError(f"request failed for POST {endpoint}: {exc}") from exc
+        time.sleep(REQUEST_INTERVAL_SEC)
+        if "error" in payload:
+            raise ThreadsApiError(f"API error for POST {endpoint}: {payload['error']}")
+        return payload
+
+    def me_profile(self) -> dict:
+        return self.get_json("me", {"fields": "id,username"})
+
+    def get_media(self, media_id: str, *, fields: str = "id,text,permalink,timestamp") -> dict:
+        return self.get_json(media_id, {"fields": fields})
+
+    def thread_replies(self, media_id: str, *, limit: int = 25) -> list[dict]:
+        capped = max(1, min(limit, 25))
+        fields = "id,text,username,timestamp,hide_status,is_reply"
+        payload = self.get_json(
+            f"{media_id}/replies",
+            {"limit": str(capped), "fields": fields},
+        )
+        data = payload.get("data")
+        return data if isinstance(data, list) else []
+
+    def create_text_container(
+        self,
+        text: str,
+        *,
+        reply_to_id: str = "",
+        enable_reply_approvals: bool = False,
+        reply_control: str = "",
+        location_id: str = "",
+        share_to_ig_story: str = "",
+    ) -> str:
+        data: dict[str, str] = {
+            "media_type": "TEXT",
+            "text": text,
+        }
+        if reply_to_id:
+            data["reply_to_id"] = reply_to_id
+        if enable_reply_approvals:
+            data["enable_reply_approvals"] = "true"
+        if reply_control:
+            data["reply_control"] = reply_control
+        if location_id:
+            data["location_id"] = location_id
+        if share_to_ig_story:
+            data["share_to_ig_story"] = share_to_ig_story
+        payload = self.post_form("me/threads", data)
+        creation_id = str(payload.get("id") or "").strip()
+        if not creation_id:
+            raise ThreadsApiError(f"create container did not return id: {payload}")
+        return creation_id
+
+    def publish_container(self, creation_id: str) -> str:
+        payload = self.post_form("me/threads_publish", {"creation_id": creation_id})
+        media_id = str(payload.get("id") or "").strip()
+        if not media_id:
+            raise ThreadsApiError(f"publish did not return id: {payload}")
+        return media_id
+
+    def manage_reply(self, reply_id: str, *, hide: bool) -> dict:
+        return self.post_form(f"{reply_id}/manage_reply", {"hide": "true" if hide else "false"})
+
+    def delete_media(self, media_id: str) -> dict:
+        return self.delete_json(media_id)
+
+    def location_search(self, *, query: str = "", latitude: str = "", longitude: str = "") -> list[dict]:
+        params: dict[str, str] = {"fields": "id,name,address,city,country"}
+        if query:
+            params["q"] = query
+        if latitude and longitude:
+            params["latitude"] = latitude
+            params["longitude"] = longitude
+        if not query and not (latitude and longitude):
+            raise ValueError("location_search requires q or latitude+longitude")
+        payload = self.get_json("location_search", params)
+        data = payload.get("data")
+        return data if isinstance(data, list) else []
+
+    def user_mentions(self, *, limit: int = 10) -> list[dict]:
+        capped = max(1, min(limit, 25))
+        fields = "id,text,username,timestamp,permalink"
+        payload = self.get_json(
+            "me/mentions",
+            {"limit": str(capped), "fields": fields},
+        )
+        data = payload.get("data")
+        return data if isinstance(data, list) else []
+
+    def media_insights(self, media_id: str, *, metrics: str = "likes,replies,views") -> dict:
+        return self.get_json(f"{media_id}/insights", {"metric": metrics})
+
+    def user_insights(self, *, metrics: str = "views") -> dict:
+        return self.get_json("me/threads_insights", {"metric": metrics})
 
     def profile_posts(self, username: str, *, limit: int = SEARCH_MAX_RESULTS) -> list[dict]:
         capped = max(1, min(limit, 100))
@@ -188,7 +337,10 @@ def _normalize_post(raw: dict, *, captured_at: str, purpose: str, priority: str,
 
 def _fetch_task_posts(client: ThreadsApiClient, task: FetchTask) -> list[dict]:
     captured_at = _now_jst_iso()
-    if task.is_username:
+    if task.is_own_profile:
+        raw_posts = client.me_threads(limit=SEARCH_MAX_RESULTS)
+        source = "me_threads"
+    elif task.is_username:
         username = task.instruction.strip().lstrip("@")
         raw_posts = client.profile_posts(username, limit=SEARCH_MAX_RESULTS)
         source = "profile_posts"

@@ -1,4 +1,4 @@
-# autoT
+# threads_analyzer
 
 Threads 市場観測の最小パイプライン（[agent_flow](https://github.com/nnhsmmyb/agent_flow) ベース）。
 
@@ -32,4 +32,13 @@ python3 main.py --no-fetch
 
 ## App Review
 
-OAuth → `python3 main.py` → `t_insight.md` までを画面録画。
+全 11 permission テスト（`review_test/`）:
+
+```bash
+python3 threads_oauth_setup.py --manual   # スコープ変更後は必須
+python3 review_test/run.py
+```
+
+詳細: [review_test/README.md](review_test/README.md)
+
+本番パイプライン: OAuth → `python3 main.py` → `t_insight.md`

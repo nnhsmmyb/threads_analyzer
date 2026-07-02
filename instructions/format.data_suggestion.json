@@ -7,7 +7,7 @@
       "item_fields": {
         "priority": "高 | 中 | 低",
         "purpose": "深堀 / … で始まる観測目的",
-        "instruction": "キーワード1行、または @username / username（profile_posts）"
+        "instruction": "キーワード1行、@me（自アカウント）、または @username / username（profile_posts）"
       }
     }
   },
@@ -15,18 +15,14 @@
     "tasks": [
       {
         "priority": "高",
-        "purpose": "深堀 / 転職×リモートの話題観測",
-        "instruction": "フルリモート 転職"
-      },
-      {
-        "priority": "中",
-        "purpose": "深堀 / 公式アカウントの投稿型（審査前デモ用）",
-        "instruction": "meta"
+        "purpose": "審査前デモ / 自アカウントの投稿取得",
+        "instruction": "@me"
       }
     ]
   },
   "instruction_rules": {
-    "keyword": "スペース区切りの検索語 → keyword_search",
-    "username": "@なしの username 1語のみ → profile_posts"
+    "own_profile": "@me → me/threads（threads_basic のみ。審査前デモ向け）",
+    "keyword": "スペース区切りの検索語 → keyword_search（threads_profile_discovery 要）",
+    "username": "@なしの username 1語のみ → profile_posts（threads_profile_discovery 要）"
   }
 }
